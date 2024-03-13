@@ -1,10 +1,20 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, url_for, redirect
+from flask_mysqldb import MySQL
 import requests
+import mysql.connector # or from mysql import connector
+from app.models.poke_review import PokeReview
 
 app = Flask(__name__)
 
 from dotenv import load_dotenv
 import os
+
+app.config['MYSQL_HOST'] = 'localhost'
+app.config['MYSQL_USER'] = 'root'
+app.config['MYSQL_PASSWORD'] = ''
+app.config['MYSQL_DB'] = 'flask_template'
+
+mysql = MySQL(app)
 
 # # Load environment variables from .env
 # load_dotenv()
@@ -89,15 +99,25 @@ pokemon_ratings = {}
 
 @app.route('/rate', methods=['POST'])
 def rate_pokemon():
+
     pokemon_name = request.form.get('pokemon_name')
     rating = request.form.get('rating')
+    user_ip = request.remote_addr
+    user_agent = request.user_agent.string
 
-    if pokemon_name and rating:
+    
+
+    if request.method =="POST":
         # Store the rating in the dictionary
-        pokemon_ratings[pokemon_name] = int(rating)
-        return f"Rated {pokemon_name} with a score of {rating}"
+        cur = mysql.connector.cursor()
+        cur.execute("INSERT INTO pokemon_review (pokemon_name, rating, user_ip, user_agent) VALUES (%s, %s, %s, %s)", 
+                    {pokemon_name, rating, user_ip, user_agent})
+        mysql.connector.commit()
+        return render_template('dashboard.html')
     else:
         return "Please provide both a Pokémon name and a rating."
+    
+
 
 
 def get_pokemon_details(pokemon_url):
