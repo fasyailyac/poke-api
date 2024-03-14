@@ -1,0 +1,63 @@
+﻿apiVersion: v1
+kind: Namespace
+metadata:
+  name: pokemonfasya
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: game2048-svc
+  namespace: pokemonfasya
+spec:
+  ports:
+  - port: 80
+    targetPort: 5000
+  selector:
+    app: game2048
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: game2048
+  namespace: pokemonfasya
+spec:
+  selector:
+    matchLabels:
+      app: game2048
+  template:
+    metadata:
+      labels:
+        app: game2048
+    spec:
+      containers:
+      - image: fasyailyac/poke-api:latest
+        imagePullPolicy: Always
+        name: game2048
+        ports:
+        - containerPort: 5000
+        resources:
+          limits:
+            cpu: 500m
+            memory: 500Mi
+          requests:
+            cpu: 1m
+            memory: 1Mi
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: pokemonfasya-ingress
+  namespace: pokemonfasya
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: pokemonjeremy.shamirhusein.my.id
+    http:
+      paths:
+      - backend:
+          service:
+            name: game2048-svc
+            port:
+              number: 80
+        path: /
+        pathType: Prefix
